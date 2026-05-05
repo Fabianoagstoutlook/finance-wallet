@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+    container_name: finance-wallet-app
+    volumes:
+      - .:/var/www
+      - vendor:/var/www/vendor
+    networks:
+      - finance
+    depends_on:
+      - mysql
+
+  nginx:
+    image: nginx:alpine
+    container_name: finance-wallet-nginx
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www
+      - ./docker/nginx:/etc/nginx/conf.d
+    networks:
+      - finance
+    depends_on:
+      - app
+
+  mysql:
+    image: mysql:8.0
+    container_name: finance-wallet-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: finance
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+    ports:
+      - "3308:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - finance
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: finance-wallet-mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - finance
+
+volumes:
+  dbdata:
+  vendor:
+
+networks:
+  finance:
+    driver: bridge
